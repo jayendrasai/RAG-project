@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-raguser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ragpass}
+      POSTGRES_DB: ${POSTGRES_DB:-ragdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-raguser} -d ${POSTGRES_DB:-ragdb}"]
+      interval: 5s
+      retries: 5
+
+  chroma:
+    image: chromadb/chroma:0.5.23
+    ports:
+      - "8100:8000"
+    volumes:
+      - chromadata:/chroma/chroma
+    environment:
+      - ANONYMIZED_TELEMETRY=false
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8001:8000"
+    env_file: .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-raguser}
+      DB_PASS: ${POSTGRES_PASSWORD:-ragpass}
+      DB_NAME: ${POSTGRES_DB:-ragdb}
+      CHROMA_HOST: chroma
+      CHROMA_PORT: 8000
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  chromadata:
+  uploads:

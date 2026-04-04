@@ -1,0 +1,40 @@
+project:
+  name: "Multimodal RAG Platform"
+  version: "1.0.0"
+  description: "Production-grade multimodal RAG SaaS with visual grounding"
+
+tech_stack:
+  backend: "FastAPI + SQLAlchemy + Python 3.11"
+  frontend: "React 18 + Vite + Tailwind CSS"
+  database: "PostgreSQL 15"
+  vector_store: "ChromaDB"
+  embeddings: "CLIP (ViT-B/32)"
+  ocr: "Tesseract"
+  llm: "GPT-4o"
+
+features:
+  - "PDF, image, and text file upload"
+  - "OCR and table extraction"
+  - "CLIP multimodal embeddings"
+  - "Semantic search with re-ranking"
+  - "Chat with retrieval-augmented generation"
+  - "Visual grounding (page/chart/table citations)"
+  - "Retrieval logging and scoring"
+  - "Chat session persistence"
+
+deployment:
+  method: "docker-compose"
+  services:
+    - backend
+    - frontend
+    - postgres
+    - chroma
+
+author:
+  name: "PRAVEENM282"
+  email: "praveenm0088@gmail.com"
+
+commands:
+  start: "docker-compose up -d"
+  test: "docker-compose exec backend pytest"
+  health_check: "curl -f http://localhost:8000/health || exit 1"
