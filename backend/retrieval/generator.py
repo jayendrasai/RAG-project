@@ -18,6 +18,57 @@ Rules:
 - Be concise and direct"""
 
 
+# ---------------------------------------------------------------------------
+# Provider helpers
+# ---------------------------------------------------------------------------
+
+def _call_openai(messages: List[Dict], images: List[str] = None) -> str:
+    """Call OpenAI (supports vision/image inputs)."""
+    client = OpenAI(api_key=settings.openai_api_key)
+
+    # OpenAI supports image_url content — inject images into the last user msg
+    if images and messages and messages[-1]["role"] == "user":
+        user_text = messages[-1]["content"]
+        user_content = []
+        for b64_img in images[:4]:
+            user_content.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{b64_img}", "detail": "low"},
+            })
+        user_content.append({"type": "text", "text": user_text})
+        messages[-1]["content"] = user_content
+
+    response = client.chat.completions.create(
+        model=settings.openai_model,
+        messages=messages,
+        max_tokens=1500,
+        temperature=0.3,
+    )
+    return response.choices[0].message.content
+
+
+def _call_groq(messages: List[Dict], images: List[str] = None) -> str:
+    """Call Groq (does NOT support vision/image inputs)."""
+    client = Groq(api_key=settings.groq_api_key)
+
+    if images:
+        log.warning("Images provided but Groq does not support vision — skipping image context.")
+
+    response = client.chat.completions.create(
+        model=settings.groq_model,
+        messages=messages,
+        max_tokens=1500,
+        temperature=0.3,
+    )
+    return response.choices[0].message.content
+
+
+# Map of provider name -> (call_function, api_key)
+_PROVIDERS = {
+    "openai": (_call_openai, lambda: settings.openai_api_key),
+    "groq": (_call_groq, lambda: settings.groq_api_key),
+}
+
 
 
 # ---------------------------------------------------------------------------
