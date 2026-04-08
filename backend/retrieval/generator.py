@@ -131,3 +131,62 @@ def generate_answer(
         "sources": [],
     }
 
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _build_context(chunks: List[Dict]) -> str:
+    """Build a formatted context block from retrieved chunks."""
+    parts = []
+    for i, chunk in enumerate(chunks):
+        meta = chunk.get("metadata", {})
+        source = meta.get("filename", "unknown")
+        page = meta.get("page_number", "?")
+        ctype = meta.get("content_type", "text")
+        parts.append(
+            f"[Source {i+1}: {source}, page {page}, type: {ctype}]\n{chunk['content']}"
+        )
+    return "\n\n---\n\n".join(parts)
+
+
+def _build_sources(chunks: List[Dict]) -> List[Dict]:
+    """Build structured source references from retrieved chunks."""
+    sources = []
+    seen = set()
+
+    for i, chunk in enumerate(chunks):
+        meta = chunk.get("metadata", {})
+        key = f"{meta.get('filename', '')}_{meta.get('page_number', '')}"
+
+        if key in seen:
+            continue
+        seen.add(key)
+
+        sources.append({
+            "rank": i + 1,
+            "filename": meta.get("filename", "Unknown"),
+            "page_number": meta.get("page_number", 0),
+            "content_type": meta.get("content_type", "text"),
+            "score": round(chunk.get("score", 0), 4),
+            "snippet": chunk["content"][:200],
+        })
+
+    return sources
+
+
+def _mock_response(query: str, chunks: List[Dict]) -> Dict:
+    """Fallback when no API keys are set — useful for dev/testing."""
+    context_summary = " | ".join(
+        f"[{c['metadata'].get('filename', '?')} p{c['metadata'].get('page_number', '?')}]"
+        for c in chunks[:3]
+    )
+    return {
+        "answer": (
+            f"[Mock response — no API key configured]\n\n"
+            f"Query: {query}\n"
+            f"Retrieved {len(chunks)} relevant chunks from: {context_summary}\n\n"
+            f"To get real answers, set GROQ_API_KEY or OPENAI_API_KEY in your .env file."
+        ),
+        "sources": _build_sources(chunks),
+    }
