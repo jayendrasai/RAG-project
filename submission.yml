@@ -31,8 +31,8 @@ deployment:
     - chroma
 
 author:
-  name: "PRAVEENM282"
-  email: "praveenm0088@gmail.com"
+  name: "chennas218"
+  email: "chennas218@gmail.com"
 
 commands:
   start: "docker-compose up -d"
