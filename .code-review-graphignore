@@ -1,0 +1,20 @@
+# Build & Environment
+node_modules/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Project Specific
+chroma_db/
+storage/
+dist/
+.agents/
+.claude
+.cursorrules
+.windsurfrules
+.mcp.json
+.opencode.json
+AGENTS.md
+CLAUDE.md
+GEMINI.md
